@@ -1,0 +1,119 @@
+=== Validation workflow in Rudder
+
+In Rudder 2.6.0, We added a feature to validate changes made by users before they are applied in the configuration.
+This feature is optionnal and be disabled without any problem.
+To enabled it you have to change the propriety rudder.workflow.enable to true in /opt/rudder/etc/rudder-properties.xml
+Workflow main goals are to improve safety and knowledge sharing between your team.
+
+==== Change request
+
+When the validation workflow is enabled in Rudder, all changes made will needs to be validated.
+Almost every changes about Rule, Directives or Groups will be embedded in a Change request.
+
+===== What is a change Request ? 
+
+A Change request has a name and a description.
+Those informations can be updated on the change request detail page.
+The creator of the Change request is also determined at its creation.
+Every actions done about a Change request is tracked and historized as an event log. 
+For now, a Change request contains only one change.
+
+
+There is 4 Change request status:  
+* Pending validation: The change has to be reviewed and validated.
+** Can be send to: Pending deployment, Deployed, Cancelled.
+* Pending deployment: The change was validated, but now require to be deployed.
+** Can be send to: Deployed, Cancelled.
+* Deployed: The change is deployed.
+** This is a final state, in can't be moved anymore.
+* Cancelled: The change was not approved.
+** This is a final state, in can't be moved anymore.
+
+Here is a diagram about all those states and transitions:
+
+image::../images/workflows/States.png
+
+All Change requests can be seen on the /secure/utilities/changeRequests page.
+There is a table containing all requests, you can filter those request by status (there is a filter tool over the table)
+
+image::../images/workflows/Management.png
+
+Each Change request is reachable on the /secure/utilities/changeRequest/id (where id is an integer > 0).
+
+image::../images/workflows/Details.png
+
+There is 2 sections :
+* Top: The Change request informations (and how to change it)
+
+image::../images/workflows/Informations.png
+
+* Bottom: A summary about all changes in the change request with two tabs:
+** History about that change request
+image::../images/workflows/History.png
+** Display the change proposed
+image::../images/workflows/Rule_Update_Diff.png
+
+
+===== How to create a Change request ? 
+
+If they are enabled in Rudder, every change in Rudder will make you create a Change request.
+You will have a popup to enter the name of your change request and a change message.
+The change message will be used as description for you Change Request, so we advise to fill it anyway to keep an explanation ab out your change.
+
+image::../images/workflows/Popup.png
+
+Change request are not available for Rule/Directive/Groups creation, they are only active if the Rule/Directive/Groups existed before:
+
+Here is a small table about all possibilities: 
+
+image::../images/workflows/Table.png
+
+===== How to validate a Change request ?
+
+Not every user can validate or deploy change in Rudder.
+Two kinds of roles were defined to:
+* Validator: Can validate Change request 
+* Deployer: To deploy Change Request
+
+Those roles:
+* Give you access to pending Change requests
+* Allow you to perform actions on them (validate or cancel)
+
+You have to change users in /opt/rudder/etc/rudder-users.xml and include those rights.
+Without one of those roles, you can only access Change Request in 'Deployed' or 'Cancelled' and those you opened before.
+
+You can deploy directly if you have the validator and deployer roles.
+The Administrator Role gives you both the deployer and valdiator role.
+There is also the possibimity to open change request in Read only mode by setting the role 'validator_Read' or 'deployer_read'
+
+image::../images/workflows/Validation.png
+
+Self validation is disabled by default (because we think that a change request need to be validated by someone else before being deployed)
+Self deployment is authorized (as it has already been reviewed) 
+Those two behavior can be changed in the properties (rudder.workflow.self.validation and rudder.workflow.self.deployment)
+
+When the initial state of a Change request has changed (ie: you want to modify a Directive, but someone else change has been accepted before yours), It can't be validated anymore.
+Handling conflicts is difficult and we want to have a good system to handle that case.
+
+image::../images/workflows/Conflict.png
+
+For now, we decided to reduce to the possibility of an error or inconsitency when there is multiple change.
+In future version of Rudder, there will be a system to handle those conflicts, and make sure actual changes are not overwritten.
+
+
+===== Notifications:
+
+In several parts of Rudder webapp there is some Notifications about Change requests.
+
+* The first one is located in webapp Title bar, just beside the deployment status.
+This notification is displayed only if the validator/deployer role is waiting to be reviewed/deployed.
+clicking on it will lead you to the Change request management page (/secure/utilities/changeRequests), with a filter already applied (only Pending validation/Deployment) 
+
+image::../images/workflows/Notification.png
+
+* The other one is in the every Rule/Directive/Group page.
+When there is a change about the Rule/Directive/Group already proposed but not deployed/cancelled, you will be notified that there is some change request pending.
+You will be provided a Link to those change request, So you can check if the change you want to make was already done before.
+
+image::../images/workflows/Warning.png
+ 
